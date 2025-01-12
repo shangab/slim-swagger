@@ -8,6 +8,8 @@
       "": "src/"
     }
   },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
   "authors": [
     {
       "name": "Abubaker Shangab",

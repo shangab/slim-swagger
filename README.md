@@ -46,7 +46,7 @@ $app = AppFactory::create();
 $app->add(new ShangabSlimSwagger($app, title: 'Title your API', version: 'version your API', description: 'Describe your API'));
 ```
 
-### Please avoid using routes names `openapi` and 'docs'
+### Please avoid using route names `openapi` and `docs`
 
 I use these two routes and serve them before the `$app` routes, `openapi` returns the OpenAPI Specs,
 while `docs` route returns the swagger UI shown above.
