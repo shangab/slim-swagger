@@ -1,0 +1,21 @@
+{
+  "name": "shangab/slim-swagger",
+  "description": "Automatic SWAGGER for slim projects, wroks as middleware.",
+  "type": "library",
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "": "src/"
+    }
+  },
+  "authors": [
+    {
+      "name": "Abubaker Shangab",
+      "email": "shangab@gmail.com"
+    }
+  ],
+  "require": {
+    "slim/slim": "^4.9",
+    "slim/psr7": "^1.5"
+  }
+}
