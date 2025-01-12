@@ -29,14 +29,30 @@ class ShangabSlimSwagger implements MiddlewareInterface
                 'description' => $this->description,
             ],
             'paths' => [],
+            'tags' => [],
         ];
+
         foreach ($routes as $route) {
             $path = $route->getPattern();
             $methods = $route->getMethods();
+            // Detect group by analyzing the path
+            $pathSegments = explode('/', trim($path, '/'));
+            $groupName = isset($pathSegments[0]) && !empty($pathSegments[0])
+                ? ucfirst($pathSegments[0]) . ' Api' // Group name based on the first segment
+                : 'General API';
+
+            // Add group (tag) to the spec if not already added
+            if (!array_search($groupName, array_column($openApiSpec['tags'], 'name'))) {
+                $openApiSpec['tags'][] = [
+                    'name' => $groupName,
+                    'description' => "$groupName Endpoints",
+                ];
+            }
 
             foreach ($methods as $method) {
                 // Add route to OpenAPI paths
                 $openApiSpec['paths'][$path][strtolower($method)] = [
+                    'tags' => [$groupName],
                     'summary' => "Endpoint for $path",
                     'responses' => [
                         '200' => [
@@ -66,7 +82,7 @@ class ShangabSlimSwagger implements MiddlewareInterface
                         ],
                     ];
                 }
-                if ($method === 'DELETE') {
+                if ($method === 'DEL') {
                     // Extract dynamic parameters from the route pattern
                     preg_match_all('/\{(\w+)\}/', $path, $matches);
                     $pathParams = $matches[1] ?? [];
