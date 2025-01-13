@@ -42,7 +42,7 @@ $cars =  [
 
 $container['data'] = ["users" => $users, "cars" => $cars];
 
-$app->add(new ShangabSlimSwagger($app, 'IFastRemitt API', '1.0.0', 'API for IFastRemittance'));
+$app->add(new ShangabSlimSwagger($app, 'Shangab Slim Swagger', '1.0.1', 'Api for Shangab Slim Swagger.'));
 
 $app->get('/', function (Request $request, Response $response, $args) {
     $response->getBody()->write('Welcome to IFastRemittance API');
