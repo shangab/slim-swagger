@@ -1,6 +1,6 @@
 {
   "name": "shangab/slim-swagger",
-  "version": "1.0.2",
+  "version": "1.2.0",
   "description": "Automatic SWAGGER for slim projects, wroks as middleware.",
   "type": "library",
   "license": "MIT",
