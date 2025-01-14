@@ -44,11 +44,28 @@ $container['data'] = ["users" => $users, "cars" => $cars];
 
 $app->add(new ShangabSlimSwagger($app, 'Shangab Slim Swagger', '1.0.1', 'Api for Shangab Slim Swagger.'));
 
-$app->get('/', function (Request $request, Response $response, $args) {
-    $response->getBody()->write('Welcome to IFastRemittance API');
-    return $response;
+
+
+$app->group('/staff', function ($app) use ($container) {
+    $app->get('/{id}', function (Request $request, Response $response, $args) {
+        $id = $args['id'];
+        $response->getBody()->write("Welcome to IFastRemittance API : " . $id);
+        return $response;
+    });
+    $app->get('/', function (Request $request, Response $response, $args) use ($container) {
+        $body = $request->getBody()->getContents();
+        $user = json_decode($body, true);
+        $container['data']['users'][] = $user;
+        $response->getBody()->write(json_encode($container['data']['users']));
+        return $response->withHeader('Content-Type', 'application/json');
+    });
 });
 $app->group('/users', function ($app) use ($container) {
+    $app->get('/{valtype}/{id}', function (Request $request, Response $response, $args) {
+        $id = $args['id'];
+        $response->getBody()->write("Welcome to IFastRemittance API : " . $id);
+        return $response;
+    });
     $app->get('/', function (Request $request, Response $response, $args) use ($container) {
         $body = json_encode($container['data']['users']);
         $response->getBody()->write($body);
@@ -56,7 +73,7 @@ $app->group('/users', function ($app) use ($container) {
     });
 
 
-    $app->post('/', function (Request $request, Response $response, $args) use ($container) {
+    $app->post('/{valtype}', function (Request $request, Response $response, $args) use ($container) {
         $body = $request->getBody()->getContents();
         $user = json_decode($body, true);
         $container['data']['users'][] = $user;
@@ -73,7 +90,7 @@ $app->group('/users', function ($app) use ($container) {
         return $response->withHeader('Content-Type', 'application/json');
     });
 
-    $app->delete('/{id}', function (Request $request, Response $response, $args) use ($container) {
+    $app->delete('/{valtype}/{id}', function (Request $request, Response $response, $args) use ($container) {
         $id = $args['id'];
         $container['data']['users'] = array_values(array_filter($container['data']['users'], function ($user) use ($id) {
             return $user['id'] != $id;
