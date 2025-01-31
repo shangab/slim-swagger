@@ -9,7 +9,8 @@ use Slim\Factory\AppFactory;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
-use ShangabMiddlewares\ShangabSlimSwagger;
+use Shangab\Middleware\ShangabSlimSwagger;
+use Shangab\Middleware\ShangabJWTAuth;
 
 $app = AppFactory::create();
 $container = $app->getContainer();
@@ -19,99 +20,86 @@ $users =  [
         'id' => 1,
         'email' => 'email1@gmail.com',
         'name' => 'John Doe1',
+        'type' => 'staff'
+
     ],
     [
         'id' => 2,
         'email' => 'email2@gmail.com',
         'name' => 'Jane Doe2',
-    ]
-
-];
-$cars =  [
-    [
-        'id' => 1,
-        'make' => 'Toyota',
-        'model' => 'Corolla',
+        'type' => 'staff'
     ],
     [
-        'id' => 2,
-        'make' => 'Honda',
-        'model' => 'Civic',
+        'id' => 3,
+        'email' => 'email3@gmail.com',
+        'name' => 'Jane Doe3',
+        'type' => 'client'
+    ],
+    [
+        'id' => 4,
+        'email' => 'email4@gmail.com',
+        'name' => 'Jane Doe4',
+        'type' => 'client'
     ]
 ];
 
-$container['data'] = ["users" => $users, "cars" => $cars];
+
+$container['data'] = ["users" => $users];
 
 $app->add(new ShangabSlimSwagger($app, 'Shangab Slim Swagger', '1.0.1', 'Api for Shangab Slim Swagger.'));
 
-
-
-$app->group('/staff', function ($app) use ($container) {
-    $app->get('/{id}', function (Request $request, Response $response, $args) {
-        $id = $args['id'];
-        $response->getBody()->write("Welcome to IFastRemittance API : " . $id);
-        return $response;
-    });
-    $app->get('/', function (Request $request, Response $response, $args) use ($container) {
-        $body = $request->getBody()->getContents();
-        $user = json_decode($body, true);
-        $container['data']['users'][] = $user;
-        $response->getBody()->write(json_encode($container['data']['users']));
-        return $response->withHeader('Content-Type', 'application/json');
-    });
-});
 $app->group('/users', function ($app) use ($container) {
-    $app->get('/{valtype}/{id}', function (Request $request, Response $response, $args) {
-        $id = $args['id'];
-        $response->getBody()->write("Welcome to IFastRemittance API : " . $id);
-        return $response;
-    });
-    $app->get('/', function (Request $request, Response $response, $args) use ($container) {
-        $body = json_encode($container['data']['users']);
-        $response->getBody()->write($body);
-        return $response->withHeader('Content-Type', 'application/json');
-    });
-
-
-    $app->post('/{valtype}', function (Request $request, Response $response, $args) use ($container) {
+    $app->post('/add', function (Request $request, Response $response, $args) use ($container) {
         $body = $request->getBody()->getContents();
         $user = json_decode($body, true);
         $container['data']['users'][] = $user;
-        $response->getBody()->write(json_encode($container['data']['users']));
+        $users = $container['data']['users'];
+        $response->getBody()->write(json_encode(['status' => true, 'message' => 'User addded', 'users' => $users]));
         return $response->withHeader('Content-Type', 'application/json');
     });
-
-    $app->put('/', function (Request $request, Response $response, $args) use ($container) {
+    $app->put('/update', function (Request $request, Response $response, $args) use ($container) {
         $body = $request->getBody()->getContents();
         $user = json_decode($body, true);
-        $key = array_search($user['email'], array_column($container['data']['users'], 'email'));
+        $key = array_search($user['id'], array_column($container['data']['users'], 'id'));
         $container['data']['users'][$key] = $user;
-        $response->getBody()->write(json_encode($container['data']['users']));
+        $users = $container['data']['users'];
+        $response->getBody()->write(json_encode(['status' => true, 'message' => 'User updated', 'users' => $users]));
         return $response->withHeader('Content-Type', 'application/json');
     });
-
-    $app->delete('/{valtype}/{id}', function (Request $request, Response $response, $args) use ($container) {
+    $app->delete('/delete/{id}', function (Request $request, Response $response, $args) use ($container) {
         $id = $args['id'];
-        $container['data']['users'] = array_values(array_filter($container['data']['users'], function ($user) use ($id) {
+        $users = array_values(array_filter($container['data']['users'], function ($user) use ($id) {
             return $user['id'] != $id;
         }));
-        $response->getBody()->write(json_encode(['status' => true, 'message' => 'User deleted']));
+        $response->getBody()->write(json_encode(['status' => true, 'message' => 'User deleted', 'users' => $users]));
+        return $response->withHeader('Content-Type', 'application/json');
+    });
+})->add(new ShangabJWTAuth($app));
+
+// All routes above this middleware will apply ShangabJWTAuth middleware protected routes.
+// Below routes will not be protected by ShangabJWTAuth middleware.
+
+$app->group('/users', function ($app) use ($container) {
+    $app->get('/staff', function (Request $request, Response $response, $args) use ($container) {
+        $users = array_values(array_filter($container['data']['users'], function ($user) {
+            return $user['type'] == 'staff';
+        }));
+        $response->getBody()->write(json_encode($users));
+        return $response->withHeader('Content-Type', 'application/json');
+    });
+    $app->get('/client', function (Request $request, Response $response, $args) use ($container) {
+        $users = array_values(array_filter($container['data']['users'], function ($user) {
+            return $user['type'] == 'client';
+        }));
+        $response->getBody()->write(json_encode($users));
+        return $response->withHeader('Content-Type', 'application/json');
+    });
+    $app->get('/all', function (Request $request, Response $response, $args) use ($container) {
+        $users = $container['data']['users'];
+        $response->getBody()->write(json_encode($users));
         return $response->withHeader('Content-Type', 'application/json');
     });
 });
 
-$app->group('/cars', function ($app) use ($container) {
-    $app->get('/', function (Request $request, Response $response, $args) use ($container) {
-        $response->getBody()->write(json_encode($container['data']['cars']));
-        return $response->withHeader('Content-Type', 'application/json');
-    });
-    $app->get('/{id}', function (Request $request, Response $response, $args) use ($container) {
-        $id = $args['id'];
-        $user = array_values(array_filter($container['data']['cars'], function ($user) use ($id) {
-            return $user['id'] == $id;
-        }));
-        $response->getBody()->write(json_encode($user));
-        return $response->withHeader('Content-Type', 'application/json');
-    });
-});
+
 $app->run();

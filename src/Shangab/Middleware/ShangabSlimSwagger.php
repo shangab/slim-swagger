@@ -1,6 +1,6 @@
 <?php
 
-namespace ShangabMiddlewares;
+namespace Shangab\Middleware;
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as ServerRequest;
@@ -10,14 +10,12 @@ use Slim\App;
 
 class ShangabSlimSwagger implements MiddlewareInterface
 {
-
     public function __construct(
         private App $app,
         private String $title = 'Shangab Slim Swagger',
         private String $version = '1.0.0',
         private String $description = 'Dynamically generated OpenAPI documentation for Slim Framework',
     ) {}
-    // This function will generate the OpenAPI schema
 
     private function getOpenApi()
     {
@@ -29,6 +27,15 @@ class ShangabSlimSwagger implements MiddlewareInterface
                 'version' => $this->version,
                 'description' => $this->description,
             ],
+            'components' => [
+                'securitySchemes' => [
+                    'bearerAuth' => [
+                        'type' => 'http',
+                        'scheme' => 'bearer',
+                        'bearerFormat' => 'JWT',
+                    ],
+                ],
+            ],
             'paths' => [],
             'tags' => [],
         ];
@@ -36,6 +43,7 @@ class ShangabSlimSwagger implements MiddlewareInterface
         foreach ($routes as $route) {
             $path = $route->getPattern();
             $methods = $route->getMethods();
+
             $pathSegments = explode('/', trim($path, '/'));
             $groupName = isset($pathSegments[0]) && !empty($pathSegments[0])
                 ? ucfirst($pathSegments[0]) . ' API'
@@ -99,6 +107,18 @@ class ShangabSlimSwagger implements MiddlewareInterface
                     ];
                 }
 
+                // Check if the route has is auth secured
+                foreach ($route->getArguments() as $argument) {
+                    if ($route->getArgument('auth') === '1') {
+                        $operation['security'] = [
+                            ['bearerAuth' => []],
+                        ];
+                        $operation['responses']['401'] = [
+                            'description' => 'Unauthorized',
+                        ];
+                        break;
+                    }
+                }
                 $openApiSpec['paths'][$path][strtolower($method)] = $operation;
             }
         }
@@ -115,6 +135,7 @@ class ShangabSlimSwagger implements MiddlewareInterface
         <head>
             <title>Shangab Swagger UI</title>
             <link href="https://cdn.jsdelivr.net/npm/swagger-ui-dist/swagger-ui.css" rel="stylesheet">
+            <link rel="icon" type="image/png" href="https://static-00.iconduck.com/assets.00/swagger-icon-512x512-halz44im.png" />
         </head>
         <body>
             <div id="swagger-ui"></div>
